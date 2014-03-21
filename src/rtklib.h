@@ -900,8 +900,8 @@ typedef struct {        /* RTCM control struct type */
     unsigned char lock[MAXSAT][NFREQ+NEXOBS]; /* lock time */
     unsigned char loss[MAXSAT][NFREQ+NEXOBS]; /* loss of lock count */
     gtime_t lltime[MAXSAT][NFREQ+NEXOBS]; /* last lock time */
-    int nbyte;          /* number of bytes in message buffer */ 
-    int nbit;           /* number of bits in word buffer */ 
+    int nbyte;          /* number of bytes in message buffer */
+    int nbit;           /* number of bits in word buffer */
     int len;            /* message length (bytes) */
     unsigned char buff[1200]; /* message buffer */
     unsigned int word;  /* word buffer for rtcm 2 */
@@ -1138,7 +1138,7 @@ typedef struct {        /* receiver raw data control type */
     double prCA[MAXSAT],dpCA[MAXSAT]; /* L1/CA pseudrange/doppler for javad */
     unsigned char halfc[MAXSAT][NFREQ+NEXOBS]; /* half-cycle add flag */
     char freqn[MAXOBS]; /* frequency number for javad */
-    int nbyte;          /* number of bytes in message buffer */ 
+    int nbyte;          /* number of bytes in message buffer */
     int len;            /* message length (bytes) */
     int iod;            /* issue of data */
     int tod;            /* time of day (ms) */
@@ -1232,7 +1232,7 @@ typedef struct {        /* RTK server type */
 
 /* global variables ----------------------------------------------------------*/
 extern const double chisqr[];           /* chi-sqr(n) table (alpha=0.001) */
-extern const double lam_carr[];         /* carrier wave length (m) {L1,L2,...} */
+extern const double lam_carr[6];         /* carrier wave length (m) {L1,L2,...} */
 extern const prcopt_t prcopt_default;   /* default positioning options */
 extern const solopt_t solopt_default;   /* default solution output options */
 extern const sbsigpband_t igpband1[][8]; /* SBAS IGP band 0-8 */

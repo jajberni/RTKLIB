@@ -24,10 +24,10 @@ static int decode_subfrm1(const unsigned char *buff, eph_t *eph)
 {
     double tow,toc;
     int i=48,week,iodc0,iodc1;
-    
+
     trace(4,"decode_subfrm1:\n");
     trace(5,"decode_subfrm1: buff="); traceb(5,buff,30);
-    
+
     tow        =getbitu(buff,24,17)*6.0;           /* transmission time */
     week       =getbitu(buff,i,10);       i+=10;
     eph->code  =getbitu(buff,i, 2);       i+= 2;
@@ -41,12 +41,12 @@ static int decode_subfrm1(const unsigned char *buff, eph_t *eph)
     eph->f2    =getbits(buff,i, 8)*P2_55; i+= 8;
     eph->f1    =getbits(buff,i,16)*P2_43; i+=16;
     eph->f0    =getbits(buff,i,22)*P2_31;
-    
+
     eph->iodc=(iodc0<<8)+iodc1;
     eph->week=adjgpsweek(week); /* week of tow */
     eph->ttr=gpst2time(eph->week,tow);
     eph->toc=gpst2time(eph->week,toc);
-    
+
     return 1;
 }
 /* decode navigation data subframe 2 -----------------------------------------*/
@@ -54,10 +54,10 @@ static int decode_subfrm2(const unsigned char *buff, eph_t *eph)
 {
     double sqrtA;
     int i=48;
-    
+
     trace(4,"decode_subfrm2:\n");
     trace(5,"decode_subfrm2: buff="); traceb(5,buff,30);
-    
+
     eph->iode=getbitu(buff,i, 8);              i+= 8;
     eph->crs =getbits(buff,i,16)*P2_5;         i+=16;
     eph->deln=getbits(buff,i,16)*P2_43*SC2RAD; i+=16;
@@ -68,9 +68,9 @@ static int decode_subfrm2(const unsigned char *buff, eph_t *eph)
     sqrtA    =getbitu(buff,i,32)*P2_19;        i+=32;
     eph->toes=getbitu(buff,i,16)*16.0;         i+=16;
     eph->fit =getbitu(buff,i, 1)?0.0:4.0; /* 0:4hr,1:>4hr */
-    
+
     eph->A=sqrtA*sqrtA;
-    
+
     return 2;
 }
 /* decode navigation data subframe 3 -----------------------------------------*/
@@ -78,10 +78,10 @@ static int decode_subfrm3(const unsigned char *buff, eph_t *eph)
 {
     double tow,toc;
     int i=48,iode;
-    
+
     trace(4,"decode_subfrm3:\n");
     trace(5,"decode_subfrm3: buff="); traceb(5,buff,30);
-    
+
     eph->cic =getbits(buff,i,16)*P2_29;        i+=16;
     eph->OMG0=getbits(buff,i,32)*P2_31*SC2RAD; i+=32;
     eph->cis =getbits(buff,i,16)*P2_29;        i+=16;
@@ -91,10 +91,10 @@ static int decode_subfrm3(const unsigned char *buff, eph_t *eph)
     eph->OMGd=getbits(buff,i,24)*P2_43*SC2RAD; i+=24;
     iode     =getbitu(buff,i, 8);              i+= 8;
     eph->idot=getbits(buff,i,14)*P2_43*SC2RAD;
-    
+
     /* check iode and iodc consistency */
     if (iode!=eph->iode||iode!=(eph->iodc&0xFF)) return 0;
-    
+
     /* adjustment for week handover */
     tow=time2gpst(eph->ttr,&eph->week);
     toc=time2gpst(eph->toc,NULL);
@@ -103,7 +103,7 @@ static int decode_subfrm3(const unsigned char *buff, eph_t *eph)
     eph->toe=gpst2time(eph->week,eph->toes);
     eph->toc=gpst2time(eph->week,toc);
     eph->ttr=gpst2time(eph->week,tow);
-    
+
     return 3;
 }
 /* decode almanac ------------------------------------------------------------*/
@@ -112,11 +112,11 @@ static void decode_almanac(const unsigned char *buff, alm_t *alm)
     gtime_t toa;
     double deltai,sqrtA,tt;
     int i=50,f0,sat=getbitu(buff,50,6);
-    
+
     trace(4,"decode_almanac: sat=%2d\n",sat);
-    
+
     if (!alm||sat<1||32<sat||alm[sat-1].week==0) return;
-    
+
     alm[sat-1].sat =sat;
     alm[sat-1].e   =getbits(buff,i,16)*P2_21;        i+=16;
     alm[sat-1].toas=getbitu(buff,i, 8)*4096.0;       i+= 8;
@@ -132,7 +132,7 @@ static void decode_almanac(const unsigned char *buff, alm_t *alm)
     alm[sat-1].f0  =getbits(buff,i, 3)*P2_17+f0*P2_20;
     alm[sat-1].A   =sqrtA*sqrtA;
     alm[sat-1].i0  =0.3*SC2RAD+deltai;
-    
+
     toa=gpst2time(alm[sat-1].week,alm[sat-1].toas);
     tt=timediff(toa,alm[sat-1].toa);
     if      (tt<302400.0) alm[sat-1].week--;
@@ -144,17 +144,17 @@ static int decode_subfrm4(const unsigned char *buff, alm_t *alm, double *ion,
                           double *utc, int *leaps)
 {
     int i,sat,svid=getbitu(buff,50,6);
-    
+
     trace(4,"decode_subfrm4: svid=%d\n",svid);
     trace(5,"decode_subfrm4: buff="); traceb(5,buff,30);
-    
+
     if (25<=svid&&svid<=32) { /* page 2,3,4,5,7,8,9,10 */
-        
+
         /* decode almanac */
         decode_almanac(buff,alm);
     }
     else if (svid==63) { /* page 25 */
-        
+
         /* decode as and sv config */
         i=56;
         for (sat=1;sat<=32;sat++) {
@@ -167,7 +167,7 @@ static int decode_subfrm4(const unsigned char *buff, alm_t *alm, double *ion,
         }
     }
     else if (svid==56) { /* page 18 */
-        
+
         /* decode ion/utc parameters */
         if (ion) {
             i=56;
@@ -199,23 +199,23 @@ static int decode_subfrm5(const unsigned char *buff, alm_t *alm)
 {
     double toas;
     int i,sat,week,svid=getbitu(buff,50,6);
-    
+
     trace(4,"decode_subfrm5: svid=%d\n",svid);
     trace(5,"decode_subfrm5: buff="); traceb(5,buff,30);
-    
+
     if (1<=svid&&svid<=24) { /* page 1-24 */
-        
+
         /* decode almanac */
         decode_almanac(buff,alm);
     }
     else if (svid==51) { /* page 25 */
-        
+
         if (alm) {
             i=56;
             toas=getbitu(buff,i,8)*4096; i+=8;
             week=getbitu(buff,i,8);      i+=8;
             week=adjgpsweek(week);
-            
+
             /* decode sv health */
             for (sat=1;sat<=24;sat++) {
                 alm[sat-1].svh=getbitu(buff,i,6); i+=6;
@@ -246,9 +246,9 @@ extern int decode_frame(const unsigned char *buff, eph_t *eph, alm_t *alm,
                         double *ion, double *utc, int *leaps)
 {
     int id=getbitu(buff,43,3); /* subframe id */
-    
+
     trace(3,"decodefrm: id=%d\n",id);
-    
+
     switch (id) {
         case 1: return decode_subfrm1(buff,eph);
         case 2: return decode_subfrm2(buff,eph);
@@ -276,9 +276,9 @@ extern int init_raw(raw_t *raw)
     sbsmsg_t sbsmsg0={0};
     lexmsg_t lexmsg0={0};
     int i,j;
-    
+
     trace(3,"init_raw:\n");
-    
+
     raw->time=raw->tobs=time0;
     raw->ephsat=0;
     raw->sbsmsg=sbsmsg0;
@@ -297,14 +297,14 @@ extern int init_raw(raw_t *raw)
     raw->tod=-1;
     for (i=0;i<MAXRAWLEN;i++) raw->buff[i]=0;
     raw->opt[0]='\0';
-    
+
     raw->obs.data =NULL;
     raw->obuf.data=NULL;
     raw->nav.eph  =NULL;
     raw->nav.alm  =NULL;
     raw->nav.geph =NULL;
     raw->nav.seph =NULL;
-    
+
     if (!(raw->obs.data =(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS))||
         !(raw->obuf.data=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS))||
         !(raw->nav.eph  =(eph_t  *)malloc(sizeof(eph_t )*MAXSAT))||
@@ -330,7 +330,7 @@ extern int init_raw(raw_t *raw)
       switch(satsys(i+1,NULL)){
         case SYS_NONE: continue;
         case SYS_GLO: memcpy(raw->nav.lam[i], lam_glo, sizeof(lam_glo)); break;
-        default: memcpy(raw->nav[i], lam_carr, sizeof(lam_carr)); break;
+        default: memcpy(raw->nav.lam[i], lam_carr, sizeof(lam_carr)); break;
       }
     }
     raw->sta.name[0]=raw->sta.marker[0]='\0';
@@ -351,7 +351,7 @@ extern int init_raw(raw_t *raw)
 extern void free_raw(raw_t *raw)
 {
     trace(3,"free_raw:\n");
-    
+
     free(raw->obs.data ); raw->obs.data =NULL; raw->obs.n =0;
     free(raw->obuf.data); raw->obuf.data=NULL; raw->obuf.n=0;
     free(raw->nav.eph  ); raw->nav.eph  =NULL; raw->nav.n =0;
@@ -371,7 +371,7 @@ extern void free_raw(raw_t *raw)
 extern int input_raw(raw_t *raw, int format, unsigned char data)
 {
     trace(5,"input_raw: format=%d data=0x%02x\n",format,data);
-    
+
     switch (format) {
         case STRFMT_OEM4 : return input_oem4 (raw,data);
         case STRFMT_OEM3 : return input_oem3 (raw,data);
@@ -397,7 +397,7 @@ extern int input_raw(raw_t *raw, int format, unsigned char data)
 extern int input_rawf(raw_t *raw, int format, FILE *fp)
 {
     trace(4,"input_rawf: format=%d\n",format);
-    
+
     switch (format) {
         case STRFMT_OEM4 : return input_oem4f (raw,fp);
         case STRFMT_OEM3 : return input_oem3f (raw,fp);
